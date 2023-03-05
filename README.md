@@ -16,3 +16,5 @@ Here are some ideas to get you started:
 -->
 
 一只蒟蒻的板子，会不定时更新，假如有什么问题欢迎通过邮箱联系我，我会尽可能及时回复大家。
+
+邮箱：422563809@qq.com
