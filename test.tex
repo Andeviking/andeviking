@@ -373,6 +373,9 @@ int main()
 \end{lstlisting}
 
 \subsection{Kruscal重构树}
+与 Kruscal 算法类似，其中每次操作建立虚点将合并的两个点集结合。
+\\虚点的权值即为边权
+\\两点间的 lca 所代表的点权即为两点路径中需要经过的最大边权最小值
 \begin{lstlisting}
 
 \end{lstlisting}
@@ -1888,11 +1891,6 @@ void get_mo()
 若非负,则令l=mid,否则令r=mid\\
 最大值显然为$a_{i}-mid*b_{i}$中所有正数的和\\
 
-\subsection{SG函数}
-\begin{lstlisting}
-
-\end{lstlisting}
-
 \subsection{容斥原理}
 集合$S$不具有性质$P_{1},P_{2},\cdots ,P_{m}$的物体个数:\\
 $\displaystyle\left\lvert \overline{A_{1}}\cap \overline{A_{2}}\cap \cdots \cap \overline{A_{m}}  \right\rvert = \left\lvert S \right\rvert -\sum_{i=1}^{m}\left\lvert A_{i} \right\rvert+\sum_{i,j:i<j}\left\lvert A_{i}\cap A_{j} \right\rvert - \sum_{i,j,k:i<j<k}\left\lvert A_{i}\cap A_{j}\cap A_{k} \right\rvert + \cdots +(-1)^{m}\left\lvert A_{1}\cap A_{2}\cap \cdots \cap A_{m} \right\rvert$\\
@@ -3313,6 +3311,20 @@ for(int i = m;i >= w[x];--i)
     dp[i] -= dp[i - w[x]];
 \end{lstlisting}
 
+\subsection{高维前缀和 SOSDP}
+\begin{lstlisting}
+//相当于每一位是 0/1 的 bit 维前缀和
+for (int i= 0; i < (1 << bit); ++i)
+    f[i] = a[i];
+for (int i= 0; i < bit; ++i){
+	for (int mask= 0; mask < (1 << bit); ++mask) {
+        if (mask & (1 << i))
+            f[mask] += f[mask ^ (1 << i)];
+    }
+}
+\end{lstlisting}
+
+
 \subsection{换根DP}
 \begin{lstlisting}
 
@@ -3359,7 +3371,25 @@ for(int i=sta;i;i=((i-1)&sta)){
 \begin{lstlisting}
 
 \end{lstlisting}
+\section{博弈}
+\subsection{Nim游戏}
+\begin{lstlisting}
 
+\end{lstlisting}
+\subsection{反Nim游戏}
+\begin{lstlisting}
+
+\end{lstlisting}
+
+\subsection{SG函数}
+\begin{lstlisting}
+
+\end{lstlisting}
+
+\subsection{纳什均衡}
+\begin{lstlisting}
+    
+\end{lstlisting}
 \section{杂项算法}
 
 \subsection{离散化}
@@ -3551,6 +3581,11 @@ int main()
     dfs(1,0,1);
 }
 \end{lstlisting}
+\subsection{切比雪夫距离与曼哈顿距离转化}
+切比雪夫距离：$max(\left\lvert x_1-x_2 \right\rvert, \left\lvert y_1-y_2 \right\rvert)$
+\\
+切比雪夫距离转换为曼哈顿距离：坐标变换为$(x+y,x-y)$
+反之：坐标变换为$(\frac{x+y}{2},\frac{x-y}{2})$
 
 \subsection{高精度加法}
 \begin{lstlisting}
