@@ -960,7 +960,132 @@ int main()
 
 \subsection{二分图最大权匹配(KM算法)}
 \begin{lstlisting}
+//最终匹配一定要是完美匹配，可以通过初始化负无穷来判断
+//本模板通过添加虚点与虚边构建完全图，再计算需要计算的点的费用和
+//最终匹配中满足 lx + ly = a
+//匹配方案存在 match 数组中
+//最大取正权，最小取负权
+int n;
+const int N = 505;
+int a[N][N];
+int posx[N], posy[N], pre[N];
+int lx[N], ly[N], matchx[N], matchy[N];
+int slack[N], d;
+bool visx[N], visy[N];
+queue<int> q;
+int nl, nr; //左右的点数
 
+void aug(int v)
+{
+    while (v) {
+        int t = matchx[pre[v]];
+        matchx[pre[v]] = v;
+        matchy[v] = pre[v];
+        v = t;
+    }
+}
+
+void bfs(int s)
+{
+    for (int i = 1; i <= nr; i++)
+        slack[i] = iINF;
+
+    memset(visx, 0, sizeof visx);
+    memset(visy, 0, sizeof visy);
+    memset(pre, 0, sizeof pre);
+
+    while (!q.empty())
+        q.pop();
+    q.push(s);
+
+    while (1) {
+        while (!q.empty()) {
+            int u = q.front();
+            q.pop();
+            visx[u] = 1;
+            for (int v = 1; v <= nr; v++) {
+                if (!visy[v]) {
+                    if (lx[u] + ly[v] - a[u][v] < slack[v]) {
+                        slack[v] = lx[u] + ly[v] - a[u][v];
+                        pre[v] = u;
+                    }
+                    if (!slack[v]) {
+                        visy[v] = 1;
+                        if (!matchy[v]) {
+                            aug(v);
+                            return;
+                        }
+                        else
+                            q.push(matchy[v]);
+                    }
+
+                }
+            }
+        }
+        d = iINF;
+
+        for (int i = 1; i <= nr; i++)
+            if (!visy[i])
+                d = min(d, slack[i]);
+
+        if (d == iINF)
+            break;
+
+        for (int i = 1; i <= nl; i++)
+            if (visx[i])
+                lx[i] -= d;
+        for (int i = 1; i <= nr; i++)
+            if (visy[i])
+                ly[i] += d;
+            else
+                slack[i] -= d;
+
+        for (int i = 1; i <= nr; i++) {
+            if (!visy[i] && !slack[i]) {
+                visy[i] = 1;
+                if (!matchy[i]) {
+                    aug(i);
+                    return;
+                }
+                else
+                    q.push(matchy[i]);
+            }
+        }
+
+    }
+
+}
+
+ll km()
+{
+    for (int i = 1; i <= nl; i++)
+        for (int j = 1; j <= nr; j++)
+            lx[i] = max(lx[i], a[i][j]);
+
+    for (int i = 1; i <= nl; i++)
+        bfs(i);
+
+    ll ans = 0;
+    for (int i = 1;i <= nl;i++)
+        ans += lx[i];
+    for (int i = 1;i <= nr;i++)
+        ans += ly[i];
+    return abs(ans);
+}
+
+void init()
+{
+    for (int i = 0; i <= n; i++) {
+        posx[i] = -1;
+        posy[i] = -1;
+        matchy[i] = matchx[i] = 0;
+        lx[i] = 0;
+        ly[i] = 0;
+    }
+
+    //将 a 置为负无穷
+    memset(a, 0xcf, sizeof a);
+}
 \end{lstlisting}
 
 
@@ -1298,6 +1423,7 @@ void PrimalDual(ll& flow,ll& cost)
 
 void init()
 {
+    memset(vis, 0, sizeof vis);
     memset(head, -1, sizeof head);
     tot = -1;
     delta = 0;
@@ -2176,9 +2302,9 @@ $D_{n}=n!\left(1-\frac{1}{1!}+\frac{1}{2!}-\frac{1}{3!}+\cdots+\frac{(-1)^{n}}{n
 $10^{9}$内所有数的最多因子个数为1344个$10^{18}$内最多有103680个\\
 $10^{7}$内所有数的因子大小的和最大约为$5\times 10^{7}$\\
 \subsection{卡特兰数}
-\begin{lstlisting}
-
-\end{lstlisting}
+\begin{Large}
+    通项: $C_n=\frac{C_{2n}^{n}}{n+1}$
+\end{Large}
 
 \subsection{斯特林数}
 表示将n个不同元素构成m个圆排列的数目
@@ -2187,7 +2313,7 @@ $10^{7}$内所有数的因子大小的和最大约为$5\times 10^{7}$\\
 \end{lstlisting}
 
 \subsection{第二类斯特林数}
-表示将n个不同元素分成m个集合的方案数\\
+表示将n个不同元素分成m个集合的方案数,不能有空集合\\
 \begin{large}
     $S(n,m)=\frac{1}{m!}\sum_{k=0}^{m}(-1)^{k}\binom{m}{k}(m-k)^{n} $
 \end{large}
@@ -2626,7 +2752,190 @@ int main()
 
 \subsection{Splay}
 \begin{lstlisting}
+const int N = 2000005;
+int rt, tot, fa[N], ch[N][2], val[N], cnt[N], sz[N];
+void maintain(int x)
+{
+    sz[x] = sz[ch[x][0]] + sz[ch[x][1]] + cnt[x];
+    return;
+}
+bool get(int x)
+{
+    return x == ch[fa[x]][1];
+}
+void clear(int x)
+{
+    ch[x][0] = ch[x][1] = fa[x] = val[x] = sz[x] = cnt[x] = 0;
+}
+void rotate(int x)
+{
+    int f = fa[x], gf = fa[f], id = get(x);
+    ch[f][id] = ch[x][id ^ 1];
+    if (ch[x][id ^ 1])
+        fa[ch[x][id ^ 1]] = f;
+    ch[x][id ^ 1] = f;
+    fa[f] = x;
+    fa[x] = gf;
+    if (gf)
+        ch[gf][f == ch[gf][1]] = x;
+    maintain(f);
+    maintain(x);
+}
 
+void splay(int x)
+{
+    int f = fa[x];
+    while (f) {
+        if (fa[f])
+            rotate(get(x) == get(f) ? f : x);
+        rotate(x);
+        f = fa[x];
+    }
+    rt = x;
+}
+int pre()
+{
+    int cur = ch[rt][0];
+    if (!cur)
+        return cur;
+    while (ch[cur][1])
+        cur = ch[cur][1];
+    splay(cur);
+    return cur;
+}
+int nxt()
+{
+    int cur = ch[rt][1];
+    if (!cur)
+        return cur;
+    while (ch[cur][0])
+        cur = ch[cur][0];
+    splay(cur);
+    return cur;
+}
+
+//插入元素
+void insert(int x)
+{
+    if (!rt) {
+        val[++tot] = x;
+        cnt[tot]++;
+        rt = tot;
+        maintain(rt);
+        return;
+    }
+    int cur = rt, f = 0;
+    while (true) {
+        if (val[cur] == x) {
+            cnt[cur]++;
+            maintain(cur);
+            maintain(f);
+            splay(cur);
+            break;
+        }
+        f = cur;
+        cur = ch[cur][val[cur] < x];
+        if (!cur) {
+            val[++tot] = x;
+            cnt[tot]++;
+            fa[tot] = f;
+            ch[f][val[f] < x] = tot;
+            maintain(tot);
+            maintain(f);
+            splay(tot);
+            break;
+        }
+    }
+}
+
+//询问 x 的排名（比 x 小的数的个数 + 1）
+int ask_rank(int x)
+{
+    int ans = 0, cur = rt;
+    while (cur) {
+        if (x < val[cur])
+            cur = ch[cur][0];
+        else {
+            ans += sz[ch[cur][0]];
+            if (x == val[cur]) {
+                splay(cur);
+                return ans + 1;
+            }
+            ans += cnt[cur];
+            cur = ch[cur][1];
+        }
+    }
+    return ans + 1;
+}
+
+//删除值为 x 的元素
+void del(int x)
+{
+    ask_rank(x);
+    if (cnt[rt] > 1) {
+        cnt[rt]--;
+        maintain(rt);
+    }
+    else if (!ch[rt][0] && !ch[rt][1]) {
+        clear(rt);
+        rt = 0;
+    }
+    else if (!ch[rt][0]) {
+        int cur = rt;
+        rt = ch[rt][1];
+        fa[rt] = 0;
+        clear(cur);
+    }
+    else if (!ch[rt][1]) {
+        int cur = rt;
+        rt = ch[rt][0];
+        fa[rt] = 0;
+        clear(cur);
+    }
+    else {
+        int cur = rt, x = pre();
+        fa[ch[cur][1]] = x;
+        ch[x][1] = ch[cur][1];
+        clear(cur);
+        maintain(rt);
+    }
+}
+
+//查询第 k 大的元素，若没有则为排名小于 k 的最大数
+int ask_kth(int k)
+{
+    int cur = rt;
+    while (true) {
+        if (ch[cur][0] && k <= sz[ch[cur][0]])
+            cur = ch[cur][0];
+        else {
+            k -= cnt[cur] + sz[ch[cur][0]];
+            if (k <= 0) {
+                splay(cur);
+                return val[cur];
+            }
+            cur = ch[cur][1];
+        }
+    }
+}
+
+//查询 x 的前驱
+int ask_pre(int x)
+{
+    insert(x);
+    int ans = val[pre()];
+    del(x);
+    return ans;
+}
+
+//查询 x 的后继
+int ask_nxt(int x)
+{
+    insert(x);
+    int ans = val[nxt()];
+    del(x);
+    return ans;
+}
 \end{lstlisting}
 
 \subsection{AC自动机}
@@ -2763,9 +3072,9 @@ int main()
 //模数与底数选取质数
 //hash[l,r]=hash[r]-hash[l-1]*(base^(r-l+1))
 
-const ll mod1 = /*private*/;
-const ll mod2 = /*private*/;
-const ll base = /*private*/;
+const ll mod1 = 1297151213;
+const ll mod2 = 1126300213;
+const ll base = 233251;
 set< pair< ll, ll > > st;
 ll h1[N];
 ll h2[N];
@@ -2849,7 +3158,7 @@ int tot;
 void insert(const string& s)
 {
     int p=0;
-    for(auto c:s){
+    for(const auto& c:s){
         if(!tr[p][c-'a'])
             tr[p][c-'a']=++tot,p=tot;
         else
@@ -2862,7 +3171,7 @@ void insert(const string& s)
 int ask(const string& s)
 {
     int p=0;
-    for(auto c:s){
+    for(const auto& c:s){
         if(!tr[p][c-'a'])
             return 0;
         else
@@ -3367,7 +3676,7 @@ for(int i=sta;i;i=((i-1)&sta)){
 
 \section{计算几何}
 
-\subsection{基础操作}
+\subsection{dls计算几何板子}
 \begin{lstlisting}
 
 \end{lstlisting}
@@ -3380,6 +3689,11 @@ for(int i=sta;i;i=((i-1)&sta)){
 \begin{lstlisting}
 
 \end{lstlisting}
+
+\subsection{威佐夫博弈}
+威佐夫博弈：有两堆各若干物品，两个人轮流从任意一堆中至少取出一个或者从两堆中取出同样多的物品，规定每次至少取一个，至多不限，最后取光者胜。\\
+结论：若较小堆石子数为两堆差值的1.618倍下取整，则先手必败
+注意：我们一般使用 $\frac{\sqrt{5}+1}{2}$来代替1.618
 
 \subsection{SG函数}
 \begin{lstlisting}
