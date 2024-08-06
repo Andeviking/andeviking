@@ -965,9 +965,127 @@ $a$ if $b$ $\Rightarrow $ b$\rightarrow$a 与 !a$\rightarrow$!b\\
 否则一定有解,且a的值取 0 和 1 中拓扑序靠后的值\\
 (tarjan算法求出的强连通分量编号为拓扑序逆序)
 
-\subsection{无向图双连通分量}
+\subsection{边双连通分量}
 \begin{lstlisting}
+vector<vector<int>> ebcc;
+int dfn[N], low[N], tim;
+bool tag[M];  // 是否是割边
+void tarjan(int x, int id)
+{
+    dfn[x] = low[x] = ++tim;
+    for (int i = head[x]; ~i; i = Next[i]) {
+        int y = ver[i];
+        if (!dfn[y]) {
+            tarjan(y, i);
+            if (dfn[x] < low[y])
+                tag[i] = tag[i ^ 1] = true;
+            low[x] = min(low[x], low[y]);
+        }
+        else if (i != (id ^ 1))
+            low[x] = min(low[x], dfn[y]);
+    }
+}
 
+int belong[N];
+void dfs(int x, int id)
+{
+    belong[x] = id;
+    ebcc.back().push_back(x);
+    for (int i = head[x]; ~i; i = Next[i]) {
+        int y = ver[i];
+        if (belong[y] || tag[i])
+            continue;
+        dfs(y, id);
+    }
+}
+
+void pre(int n, int m)
+{
+    ebcc.clear();
+    tim = 0;
+    tot = -1;
+
+    for (int i = 1; i <= n; ++i) {
+        head[i] = -1;
+        belong[i] = 0;
+        dfn[i] = 0;
+    }
+
+    for (int i = 0; i <= 2 * m; ++i)
+        tag[i] = 0;
+}
+
+void work(int n)
+{
+    for (int i = 1; i <= n; ++i)
+        if (!dfn[i])
+            tarjan(i, -1);
+
+    for (int i = 1; i <= n; ++i)
+        if (!belong[i]) {
+            ebcc.push_back(vector<int>());
+            dfs(i, ebcc.size());
+        }
+}
+\end{lstlisting}
+
+\subsection{点双连通分量}
+\begin{lstlisting}
+vector<vector<int>> vbcc;
+int tim;
+int dfn[N], low[N];
+stack<int> stk;
+
+void tarjan(int x, int fa)
+{
+    bool flag = false;
+    dfn[x] = low[x] = ++tim;
+    stk.push(x);
+
+    for (int i = head[x]; i; i = Next[i]) {
+        int y = ver[i];
+
+        if (!dfn[y]) {
+            flag = true;
+            tarjan(y, x);
+            low[x] = min(low[x], low[y]);
+
+            if (low[y] >= dfn[x]) {
+                vbcc.push_back(vector<int>());
+
+                while (stk.top() != y) {
+                    vbcc.back().push_back(stk.top());
+                    stk.pop();
+                }
+                vbcc.back().push_back(y);
+                stk.pop();
+
+                vbcc.back().push_back(x);
+            }
+        }
+        else if (y != fa)
+            low[x] = min(low[x], dfn[y]);
+    }
+    if (!fa & !flag)
+        vbcc.push_back({x});
+}
+
+void pre(int n)
+{
+    tot = tim = 0;
+    for (int i = 1; i <= n; ++i)
+        head[i] = dfn[i] = 0;
+}
+
+void work(int n)
+{
+    for (int i = 1; i <= n; ++i)
+        if (!dfn[i]) {
+            while (!stk.empty())
+                stk.pop();
+            tarjan(i, 0);
+        }
+}
 \end{lstlisting}
 
 \subsection{拓扑排序}
@@ -2508,11 +2626,6 @@ ll SigmaPhi(ll Key)
 }
 \end{lstlisting}
 
-\subsection{Powerful Number筛}
-\begin{lstlisting}
-
-\end{lstlisting}
-
 \subsection{快速数论变换(NTT)}
 \begin{lstlisting}
 const int N=300005;
@@ -3031,6 +3144,11 @@ $10^{7}$内所有数的因子大小的和最大约为$5\times 10^{7}$\\
 
 \end{lstlisting}
 
+\subsection{贝尔数}
+\begin{lstlisting}
+
+\end{lstlisting}
+
 \subsection{复数操作}
 \begin{lstlisting}
 
@@ -3098,11 +3216,6 @@ vector<int> incantor(int x,int n){
 \\
 $\frac{x^{m}}{m!}$前的系数即为选m个元素排列的值
 
-\subsection{拉格朗日插值}
-\begin{lstlisting}
-
-\end{lstlisting}
-
 \subsection{自适应辛普森积分}
 \begin{lstlisting}
 const long double eps = 1e-8L; //设置为精度 + 2
@@ -3133,6 +3246,10 @@ ld integr(ld l, ld r, ld eps = eps)
 }
 \end{lstlisting}
 
+\subsection{prufer序列}
+\begin{lstlisting}
+    
+\end{lstlisting}
 \section{数据结构}
 
 \subsection{并查集}
@@ -3568,11 +3685,6 @@ int main()
 
 \end{lstlisting}
 
-\subsection{平衡树}
-\begin{lstlisting}
-
-\end{lstlisting}
-
 \subsection{Splay}
 \begin{lstlisting}
 const int N = 2000005;
@@ -3874,16 +3986,6 @@ int main()
 \end{lstlisting}
 
 \subsection{LCT动态树}
-\begin{lstlisting}
-
-\end{lstlisting}
-
-\subsection{左偏树}
-\begin{lstlisting}
-
-\end{lstlisting}
-
-\subsection{仙人掌}
 \begin{lstlisting}
 
 \end{lstlisting}
@@ -4446,7 +4548,13 @@ int main()
 
 \subsection{分组背包}
 \begin{lstlisting}
-
+//时间复杂度：O(n*m)
+//objs表示物品组集合
+for (const auto &obj : objs)
+    for (int j = m; ~j; --j)
+        for (const auto &[w, val] : obj)
+            if (w <= j)
+                dp[j] = max(dp[j], dp[j - w] + val);
 \end{lstlisting}
 
 \subsection{回退背包}
@@ -4473,12 +4581,6 @@ for (int i= 0; i < bit; ++i){
             f[mask] += f[mask ^ (1 << i)];
     }
 }
-\end{lstlisting}
-
-
-\subsection{换根DP}
-\begin{lstlisting}
-
 \end{lstlisting}
 
 \subsection{状压DP}
@@ -4523,10 +4625,12 @@ for(int i=sta;i;i=((i-1)&sta)){
 
 \end{lstlisting}
 \section{博弈}
+
 \subsection{Nim游戏}
 \begin{lstlisting}
 
 \end{lstlisting}
+
 \subsection{反Nim游戏}
 \begin{lstlisting}
 
@@ -4538,14 +4642,8 @@ for(int i=sta;i;i=((i-1)&sta)){
 注意：我们一般使用 $\frac{\sqrt{5}+1}{2}$来代替1.618
 
 \subsection{SG函数}
-\begin{lstlisting}
+能到达的局面SG值为其后继状态SG值的最小未出现的非负整数
 
-\end{lstlisting}
-
-\subsection{纳什均衡}
-\begin{lstlisting}
-    
-\end{lstlisting}
 \section{杂项算法}
 
 \subsection{离散化}
@@ -4627,6 +4725,7 @@ while(r - l > EPS) {
 // 输出 l 或 r 都可
 cout << l << endl;
 \end{lstlisting}
+
 \subsection{倍增}
 \begin{lstlisting}
 
@@ -4745,27 +4844,67 @@ int main()
 
 \subsection{高精度加法}
 \begin{lstlisting}
-    
+string add(string a, string b)
+{
+    reverse(range(a));
+    reverse(range(b));
+
+    int del = 0;
+    int n = max(a.size(), b.size());
+    string ans;
+    for (int i = 0; i < n; ++i) {
+        int sum = del;
+        if (i < a.size())
+            sum += a[i] - '0';
+        if (i < b.size())
+            sum += b[i] - '0';
+        ans.push_back(sum % 10 + '0');
+        del = sum / 10;
+    }
+    if (del)
+        ans.push_back(del + '0');
+    reverse(range(ans));
+    return ans;
+}
 \end{lstlisting}
 
 \subsection{高精度减法}
 \begin{lstlisting}
-    
+string minu(string a, string b)
+{
+    bool flag = false;
+    if (b.size() > a.size() || (a.size() == b.size() && b > a)) {
+        swap(a, b);
+        flag = true;
+    }
+    reverse(range(a));
+    reverse(range(b));
+    int del = 0;
+    int n = a.size();
+    string ans;
+    for (int i = 0; i < n; ++i) {
+        int now = a[i] - del - (i < b.size() ? b[i] : '0');
+        del = now < 0;
+        now += del * 10;
+        ans.push_back(now + '0');
+    }
+    while (ans.size() > 1 && ans.back() == '0')
+        ans.pop_back();
+    reverse(range(ans));
+    if (flag)
+        ans = "-" + ans;
+    return ans;
+}
 \end{lstlisting}
 
-\subsection{高精度乘法}
-\begin{lstlisting}
-    
-\end{lstlisting}
 
-\subsection{高精度除法}
+\subsection{卡常指令}
 \begin{lstlisting}
-    
-\end{lstlisting}
-
-\subsection{NTT优化高精度乘法}
-\begin{lstlisting}
-    
+#pragma GCC optimize("Ofast")
+#pragma GCC target("sse3","sse2","sse")
+#pragma GCC target("avx","sse4","sse4.1","sse4.2","ssse3")
+#pragma GCC target("f16c")
+#pragma GCC optimize("inline","fast-math","unroll-loops","no-stack-protector")
 \end{lstlisting}
 
 \subsection{数论公式总结}
