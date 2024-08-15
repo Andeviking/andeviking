@@ -2628,61 +2628,88 @@ ll SigmaPhi(ll Key)
 
 \subsection{快速数论变换(NTT)}
 \begin{lstlisting}
-const int N=300005;
-int n,m;        //项数分别为n和m
-int rev[N],tot,bit;
-ll a[N],b[N];   //多项式 a ,b 大小为最高幂次的二倍
-const ll g=3;
-const ll mod = 998244353;
-void ntt(ll a[],int flag)
+namespace ntt
 {
-    for(int i=0;i<tot;i++)
-        if(i<rev[i])
-            swap(a[i],a[rev[i]]);
-    for(int mid=1;mid<tot;mid<<=1){
-        ll len=mid*2;
-        ll g1=qpow(g,(mod-1)/len)%mod;
-        if(flag==-1)
-            g1=qpow(g1,mod-2);
-        for(int i=0;i<tot;i+=len){
-            ll gk=1;
-            for(int j=0;j<mid;j++,gk=gk*g1%mod){
-                int x=a[i+j],y=a[i+j+mid]*gk%mod;
-                a[i+j]=(x+y)%mod;
-                a[i+j+mid]=(x-y+mod)%mod;
-            }
+    using poly = vector<int>;
+    static constexpr int N = 2097160;
+    static constexpr int mod = 998244353;
+    static constexpr int g = 3;
+    static int gk[N], rev[N];
+    static unsigned long long t[N];
+
+    int qpow(int x, long long n)
+    {
+        int ans = 1;
+        for (; n; n >>= 1) {
+            if (n & 1)
+                ans = 1ll * ans * x % mod;
+            x = 1ll * x * x % mod;
         }
+        return ans;
     }
-    if(flag==-1){
-        ll inv=qpow(tot,mod-2);
-        for(int i=0;i<tot;i++)
-            a[i]=1ll*a[i]*inv%mod;
+    void NTT(poly& a, int n)
+    {
+        a.resize(n);
+        for (int i = 0; i < n; ++i)
+            t[i] = a[rev[i]];
+
+        for (int i = 1; i < n; i <<= 1) {
+            for (int k = i & (1 << 19); k; --k)
+                if (t[k] >= mod * 9ull)
+                    t[k] -= mod * 9ull;
+            for (int j = 0, p = i << 1; j < n; j += p)
+                for (int k = 0; k < i; ++k) {
+                    const int x = t[i + j + k] * gk[i + k] % mod;
+                    t[i + j + k] = t[k + j] + mod - x;
+                    t[k + j] += x;
+                }
+        }
+        for (int i = 0; i < n; ++i)
+            a[i] = t[i] % mod;
+    }
+
+    int com_size(int n, int m)
+    {
+        if (!n || !m)
+            return 0;
+        auto sz = 2 << __lg(n + m - 1);
+        int cnt = __builtin_ctz(sz);
+        for (static int i = 1; i < sz; i <<= 1) {
+            gk[i] = 1;
+            const int w = qpow(g, mod / i / 2);
+            for (int j = 1; j < i; ++j)
+                gk[i + j] = 1ll * gk[i + j - 1] * w % mod;
+        }
+        for (int i = 0; i < sz; ++i)
+            rev[i] = (rev[i >> 1] >> 1) | ((i & 1) << (cnt - 1));
+
+        return sz;
+    }
+
+    void mult(poly& a, poly b)
+    {
+        auto n = com_size(a.size(), b.size());
+        int inv = mod - (mod - 1) / n;
+        NTT(a, n), NTT(b, n);
+        for (int i = 0; i < n; ++i)
+            a[i] = 1ll * a[i] * b[i] % mod * inv % mod;
+        NTT(a, n);
+        reverse(a.begin() + 1, a.begin() + n);
+    }
+
+    poly& operator*=(poly& a, const poly& t)
+    {
+        mult(a, t);
+        while (!a.empty() && a.back() == 0)
+            a.pop_back();
+        return a;
+    }
+    poly operator*(poly a, const poly& t)
+    {
+        return a *= t;
     }
 }
-
-void poly_mul(ll a[],ll b[])
-{
-    ntt(a,1),ntt(b,1);
-    for(int i=0;i<tot;i++)
-        a[i]=a[i]*b[i]%mod;
-    ntt(a,-1);
-}
-
-void poly_init()
-{
-    while((1<<bit)<n+m+1)
-        bit++;
-    tot=(1<<bit);
-    for(int i=0;i<tot;i++)
-        rev[i]=(rev[i>>1]>>1)|((i&1)<<(bit-1));
-}
-int main()
-{
-    /****使用方式****/
-    poly_init();        //初始化蝴蝶变换数组
-    poly_mul(a,b);      //多项式a,b相乘,结果保存在a中
-    return 0;
-}
+using namespace ntt;
 \end{lstlisting}
 
 \subsection{多项式求逆}
@@ -4618,12 +4645,6 @@ for(int i=sta;i;i=((i-1)&sta)){
 
 \end{lstlisting}
 
-\section{计算几何}
-
-\subsection{二维几何}
-\begin{lstlisting}
-
-\end{lstlisting}
 \section{博弈}
 
 \subsection{Nim游戏}
