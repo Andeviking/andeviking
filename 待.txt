@@ -12,11 +12,6 @@ lyndon分解
 反Nim游戏
 
 
-FFT
-斯特林数
-欧拉数
-贝尔数
-复数操作
 prufer序列
 AC自动机
 CDQ分治

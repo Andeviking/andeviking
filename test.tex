@@ -2630,126 +2630,173 @@ ll SigmaPhi(ll Key)
 \begin{lstlisting}
 namespace ntt
 {
-    using poly = vector<int>;
-    static constexpr int N = 2097160;
-    static constexpr int mod = 998244353;
-    static constexpr int g = 3;
-    static int gk[N], rev[N];
-    static unsigned long long t[N];
+static constexpr int N = 262150;
+static constexpr int mod = 998244353;
+static constexpr int g = 3;
+static int gk[N], rev[N];
+static unsigned long long t[N];
 
-    int qpow(int x, long long n)
-    {
-        int ans = 1;
-        for (; n; n >>= 1) {
-            if (n & 1)
-                ans = 1ll * ans * x % mod;
-            x = 1ll * x * x % mod;
-        }
-        return ans;
+int qpow(int x, long long n)
+{
+    int ans = 1;
+    for (; n; n >>= 1) {
+        if (n & 1)
+            ans = 1ll * ans * x % mod;
+        x = 1ll * x * x % mod;
     }
-    void NTT(poly& a, int n)
-    {
-        a.resize(n);
-        for (int i = 0; i < n; ++i)
-            t[i] = a[rev[i]];
+    return ans;
+}
+void NTT(vector<int> &a, int n)
+{
+    a.resize(n);
+    for (int i = 0; i < n; ++i)
+        t[i] = a[rev[i]];
 
-        for (int i = 1; i < n; i <<= 1) {
-            for (int k = i & (1 << 19); k; --k)
-                if (t[k] >= mod * 9ull)
-                    t[k] -= mod * 9ull;
-            for (int j = 0, p = i << 1; j < n; j += p)
-                for (int k = 0; k < i; ++k) {
-                    const int x = t[i + j + k] * gk[i + k] % mod;
-                    t[i + j + k] = t[k + j] + mod - x;
-                    t[k + j] += x;
-                }
-        }
-        for (int i = 0; i < n; ++i)
-            a[i] = t[i] % mod;
+    for (int i = 1; i < n; i <<= 1) {
+        for (int k = i & (1 << 19); k; --k)
+            if (t[k] >= mod * 9ull)
+                t[k] -= mod * 9ull;
+        for (int j = 0, p = i << 1; j < n; j += p)
+            for (int k = 0; k < i; ++k) {
+                const int x = t[i + j + k] * gk[i + k] % mod;
+                t[i + j + k] = t[k + j] + mod - x;
+                t[k + j] += x;
+            }
     }
+    for (int i = 0; i < n; ++i)
+        a[i] = t[i] % mod;
+}
 
-    int com_size(int n, int m)
-    {
-        if (!n || !m)
-            return 0;
-        auto sz = 2 << __lg(n + m - 1);
-        int cnt = __builtin_ctz(sz);
-        for (static int i = 1; i < sz; i <<= 1) {
-            gk[i] = 1;
-            const int w = qpow(g, mod / i / 2);
-            for (int j = 1; j < i; ++j)
-                gk[i + j] = 1ll * gk[i + j - 1] * w % mod;
-        }
-        for (int i = 0; i < sz; ++i)
-            rev[i] = (rev[i >> 1] >> 1) | ((i & 1) << (cnt - 1));
-
-        return sz;
+int com_size(int n, int m)
+{
+    auto sz = 2 << __lg(n + m - 1);
+    int cnt = __builtin_ctz(sz);
+    for (static int i = 1; i < sz; i <<= 1) {
+        gk[i] = 1;
+        const int w = qpow(g, mod / i / 2);
+        for (int j = 1; j < i; ++j)
+            gk[i + j] = 1ll * gk[i + j - 1] * w % mod;
     }
+    for (int i = 0; i < sz; ++i)
+        rev[i] = (rev[i >> 1] >> 1) | ((i & 1) << (cnt - 1));
 
-    void mult(poly& a, poly b)
-    {
-        auto n = com_size(a.size(), b.size());
-        int inv = mod - (mod - 1) / n;
-        NTT(a, n), NTT(b, n);
-        for (int i = 0; i < n; ++i)
-            a[i] = 1ll * a[i] * b[i] % mod * inv % mod;
-        NTT(a, n);
+    return sz;
+}
+
+void mult(vector<int> &a, vector<int> b)
+{
+    auto n = com_size(a.size(), b.size());
+    int inv = mod - (mod - 1) / n;
+    NTT(a, n), NTT(b, n);
+    for (int i = 0; i < n; ++i)
+        a[i] = 1ll * a[i] * b[i] % mod * inv % mod;
+    NTT(a, n);
+    if (n)
         reverse(a.begin() + 1, a.begin() + n);
-    }
+}
 
-    poly& operator*=(poly& a, const poly& t)
+class poly : public vector<int> {
+public:
+    using vector<int>::vector;
+    poly operator*=(const poly &t)
     {
+        auto &a = *this;
+        if (a.empty() || t.empty())
+            return {0};
         mult(a, t);
         while (!a.empty() && a.back() == 0)
             a.pop_back();
         return a;
     }
-    poly operator*(poly a, const poly& t)
+    poly operator*(const poly &t)
     {
-        return a *= t;
+        return poly(*this) *= t;
     }
+};
 }
 using namespace ntt;
 \end{lstlisting}
 
-\subsection{多项式求逆}
+\subsection{快速傅立叶变换(FFT)}
 \begin{lstlisting}
-//直接 dfs(n) 即可
-//结果为 1/f(x) (mod x^n)的值
-const int N = 400005;
-// c数组中存原始多项式，答案存 a数组中
-ll a[N], b[N], c[N], d[N];
-void dfs(int len)
+namespace fft
 {
-    if (len == 1) {
-        a[0] = inv(c[0]);
-        return;
+using db = double;
+using cp = complex<db>;
+using poly = vector<db>;
+
+static constexpr db pi = acosl(-1);
+static constexpr int N = 2097160;
+static cp wn[N];
+static int rev[N];
+
+void FFT(vector<cp> &a, int n, int opt)
+{
+    a.resize(n);
+    for (int i = 0; i < n; ++i)
+        if (rev[i] < i)
+            swap(a[rev[i]], a[i]);
+    wn[0] = {1, 0};
+    for (int i = 1; i < n; i <<= 1) {
+        cp wi = {cosl(pi / i), opt * sinl(pi / i)};
+        for (int k = i - 2; k >= 0; k -= 2)
+            wn[k + 1] = (wn[k] = wn[k >> 1]) * wi;
+        for (int j = 0, p = i << 1; j < n; j += p)
+            for (int k = 0; k < i; ++k) {
+                cp x = a[j + k], y = wn[k] * a[j + k + i];
+                a[j + k] = x + y, a[j + k + i] = x - y;
+            }
     }
-    dfs(len / 2 + (len & 1));
-    for (int i = 0;i < len;i++)
-        d[i] = 2 * a[i] % mod;
-    poly_init(len, len);
 
-    for (int i = 0;i < len;i++)
-        b[i] = a[i];
-    poly_mul(a, b);
-    ntt(b, -1);
-
-    for (int i = 0;i < len;i++)
-        b[i] = c[i];
-    poly_mul(a, b);
-    ntt(b, -1);
-
-    for (int i = 0;i < len;i++)
-        a[i] = (d[i] - a[i] + mod) % mod;
-    for (int i = len;i < tot;i++)
-        a[i] = 0;
+    if (opt == -1)
+        for (int i = 0; i < n; ++i)
+            a[i] /= n;
 }
-\end{lstlisting}
 
-\subsection{二项式展开}
-\begin{lstlisting}
+int com_size(int n, int m)
+{
+    if (!n || !m)
+        return 0;
+    auto sz = 2 << __lg(n + m - 1);
+    int cnt = __builtin_ctz(sz);
+    for (int i = 0; i < sz; ++i)
+        rev[i] = (rev[i >> 1] >> 1) | ((i & 1) << (cnt - 1));
 
+    return sz;
+}
+
+void mult(poly &a, poly b)
+{
+    vector<cp> use;
+    auto n = com_size(a.size(), b.size());
+    use.resize(max(a.size(), b.size()));
+
+    for (int i = 0; i < a.size(); ++i)
+        use[i].real(a[i]);
+    for (int i = 0; i < b.size(); ++i)
+        use[i].imag(b[i]);
+
+    FFT(use, n, 1);
+    for (int i = 0; i < n; ++i)
+        use[i] = use[i] * use[i];
+    FFT(use, n, -1);
+
+    a.resize(n);
+    for (int i = 0; i < n; ++i)
+        a[i] = use[i].imag() / 2;
+}
+
+poly &operator*=(poly &a, const poly &t)
+{
+    mult(a, t);
+    return a;
+}
+poly operator*(poly a, const poly &t)
+{
+    return a *= t;
+}
+}
+using namespace fft;
 \end{lstlisting}
 
 \subsection{快速沃尔什变换(FWT)}
@@ -2801,256 +2848,86 @@ void fwt_xor(int a[],int op)
 }
 \end{lstlisting}
 
-\subsection{多项式全家桶}
+\subsection{多项式求逆}
 \begin{lstlisting}
-namespace algebra {
-static constexpr int limit = 250;
-static constexpr int N = 400005;
-static constexpr int mod = 998244353;
-using ll = long long;
-mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
-
-inline int add(int a, int b, const int mod = mod) { return (a += b) >= mod ? a - mod : a; }
-inline int sub(int a, int b, const int mod = mod) { return (a -= b) < 0 ? a + mod : a; }
-inline int mul(int a, int b, const int mod = mod) { return 1ll * a * b % mod; }
-//快速幂
-ll qpow(ll x, ll n)
+poly operator-=(const poly &t)
 {
-    if (n == 0)
-        return 1;
-    else {
-        x %= mod;
-        ll ans = 1;
-        for (;n;n >>= 1) {
-            if (n & 1)
-                ans = ans * x % mod;
-            x = x * x % mod;
-        }
-        return ans;
-    }
+    auto &a = *this;
+    a.resize(max(a.size(), t.size()));
+    for (int i = 0; i < t.size(); ++i)
+        a[i] = (a[i] - t[i] < 0 ? a[i] - t[i] + mod : a[i] - t[i]);
+    while (!a.empty() && a.back() == 0)
+        a.pop_back();
+    return a;
+}
+poly operator-(const poly &t)
+{
+    return poly(*this) -= t;
 }
 
-int frac(int x)
+poly mod_xk(int k)
+{
+    return poly(begin(), begin() + min(k, (int)size()));
+}
+
+// 多项式求逆
+poly inv(int n)
+{
+    if (n == 1)
+        return {qpow(at(0), mod - 2)};
+    poly h = inv((n + 1) >> 1);
+    return ((poly{2} - (mod_xk(n) * h).mod_xk(n)) * h).mod_xk(n);
+}
+\end{lstlisting}
+
+\subsection{多项式 ln}
+\begin{lstlisting}
+static int frac(int x)
 {
     static int F[N];
     static bool init = false;
     if (!init) {
         F[0] = 1;
         for (int i = 1; i < N; i++)
-            F[i] = mul(F[i - 1], i);
+            F[i] = 1ll * F[i - 1] * i % mod;
         init = true;
     }
     return F[x];
 }
 
-int ifrac(int x)
+static int ifrac(int x)
 {
     static int F[N];
     static bool init = false;
     if (!init) {
         F[N - 1] = qpow(frac(N - 1), mod - 2);
         for (int i = N - 2; i >= 0; i--) {
-            F[i] = mul(F[i + 1], (i + 1));
+            F[i] = 1ll * F[i + 1] * (i + 1) % mod;
         }
         init = true;
     }
     return F[x];
 }
-namespace ntt {
-static constexpr int g = 3;
-static int gk[N], rev[N];
-void init(int n, vector<int>& a)
-{
-    a.resize(n);
-    int cnt = 0;
-    int x = n;
-    while (x) {
-        cnt++;
-        x >>= 1;
-    }
-    cnt--;
-    for (int i = 0;i < n;++i)
-        rev[i] = (rev[i >> 1] >> 1) | ((i & 1) << (cnt - 1));
-}
 
-void NTT(vector<int>& a, int n, int opt)
-{
-    init(n, a);
-    for (int i = 0; i < n; ++i)
-        if (i < rev[i])
-            std::swap(a[i], a[rev[i]]);
-
-    for (int i = (gk[0] = 1); i < n; i <<= 1) {
-        int wn = qpow(g, (mod - 1) / (i << 1));
-        if (opt == -1)
-            wn = qpow(wn, mod - 2);
-        for (int k = i - 2; k >= 0; k -= 2)
-            gk[k + 1] = mul(gk[k] = gk[k >> 1], wn);
-        for (int j = 0, p = i << 1; j < n; j += p) {
-            for (int k = 0; k < i; ++k) {
-                int x = a[j + k], y = mul(gk[k], a[j + k + i]);
-                a[j + k] = add(x, y), a[j + k + i] = sub(x, y);
-            }
-        }
-    }
-    if (opt == -1)
-        for (int i = 0, r = qpow(n, mod - 2); i < n; ++i)
-            a[i] = mul(a[i], r);
-}
-
-int com_size(int n, int m)
-{
-    if (!n || !m)
-        return 0;
-    auto sz = n + m - 1;
-
-    while (__builtin_popcount(sz) != 1) {
-        sz += (sz & (-sz));
-    }
-    return sz;
-}
-
-void mul_slow(vector<auto>& a, const vector<auto>& b)
-{
-    if (a.empty() || b.empty()) {
-        a.clear();
-    }
-    else {
-        int n = a.size();
-        int m = b.size();
-        a.resize(n + m - 1);
-        for (int k = n + m - 2; k >= 0; k--) {
-            a[k] = mul(a[k], b[0]);
-            for (int j = max(k - n + 1, 1); j < min(k + 1, m); j++)
-                a[k] = add(a[k], mul(a[k - j], b[j]));
-        }
-    }
-}
-
-void mult(vector<int>& a, vector<int> b)
-{
-    if (min(a.size(), b.size()) < limit) {
-        mul_slow(a, b);
-        return;
-    }
-
-    auto n = com_size(a.size(), b.size());
-    NTT(a, n, 1), NTT(b, n, 1);
-    for (int i = 0;i < n;++i)
-        a[i] = mul(a[i], b[i]);
-    NTT(a, n, -1);
-}
-}
-
-class poly {
-public:
-vector<int>a;
-
-void normalize()
-{
-    while (!a.empty() && a.back() == 0)
-        a.pop_back();
-}
-
-poly() {}
-poly(int a0) : a{ a0 } { normalize(); }
-poly(const vector<int>& t) :a(t) { normalize(); }
-
-int size() { return a.size(); }
-int& operator [](int idx)
-{
-    while (a.size() <= idx)
-        a.push_back(0);
-    return a[idx];
-}
-
-
-poly operator -() const
-{
-    auto t = *this;
-    for (auto& it : t.a) {
-        it = sub(0, it % mod);
-    }
-    return t;
-}
-
-poly operator += (const poly& t)
-{
-    a.resize(max(a.size(), t.a.size()));
-    for (int i = 0;i < t.a.size();++i) {
-        a[i] = add(a[i], t.a[i]);
-    }
-    normalize();
-    return *this;
-}
-
-poly operator -= (const poly& t)
-{
-    a.resize(max(a.size(), t.a.size()));
-    for (int i = 0; i < t.a.size(); ++i) {
-        a[i] = sub(a[i], t.a[i]);
-    }
-    normalize();
-    return *this;
-}
-
-poly operator + (const poly& t) const { return poly(*this) += t; }
-poly operator - (const poly& t) const { return poly(*this) -= t; }
-
-poly mod_xk(size_t k) const
-{ // 取前k项
-    return vector<int>(begin(a), begin(a) + min(k, a.size()));
-}
-
-poly mul_xk(size_t k) const
-{ // 乘以 x^k
-    auto res = a;
-    res.insert(begin(res), k, 0);
-    return res;
-}
-
-poly div_xk(size_t k) const
-{ // 除以 x^k 也就是丢弃前k项
-    return vector<int>(begin(a) + min(k, a.size()), end(a));
-}
-
-poly substr(size_t l, size_t r) const
-{ // return mod_xk(r).div_xk(l)
-    return vector<int>(
-        begin(a) + min(l, a.size()),
-        begin(a) + min(r, a.size())
-    );
-}
-
-poly operator *= (const poly& t) { ntt::mult(a, t.a);normalize(); return *this; }
-poly operator * (const poly& t) const { return poly(*this) *= t; }
-
-//多项式求逆
-poly inv(int n)
-{
-    if (n == 1)
-        return qpow(a[0], mod - 2);
-    poly h = inv((n + 1) >> 1);
-    return ((poly(2) - (mod_xk(n) * h).mod_xk(n)) * h).mod_xk(n);
-}
-
-//多项式求导
+// 多项式求导
 poly deriv(int k = 1)
 {
+    auto &a = *this;
     if (k > size())
-        return 0;
-    vector<int>f(a.size() - k);
-    for (int i = k;i < a.size();++i)
-        f[i - k] = mul(a[i], mul(frac(i), ifrac(i - 1)));
+        return {0};
+    poly f(a.size() - k);
+    for (int i = k; i < a.size(); ++i)
+        f[i - k] = 1ll * a[i] * frac(i) % mod * ifrac(i - 1) % mod;
     return f;
 }
 
-//多项式积分
+// 多项式积分
 poly integr()
 {
-    vector<int>f(a.size() + 1);
-    for (int i = 1;i <= a.size();++i)
-        f[i] = mul(a[i - 1], algebra::qpow(i, mod - 2));
+    auto &a = *this;
+    poly f(a.size() + 1);
+    for (int i = 1; i <= a.size(); ++i)
+        f[i] = 1ll * a[i - 1] * qpow(i, mod - 2) % mod;
     return f;
 }
 
@@ -3059,24 +2936,56 @@ poly ln(int n)
 {
     return (deriv() * inv(n)).integr().mod_xk(n);
 }
+\end{lstlisting}
 
-//求exp^(F(x))
+\subsection{多项式 exp}
+\begin{lstlisting}
+poly operator+=(const poly &t)
+{
+    auto &a = *this;
+    a.resize(max(a.size(), t.size()));
+    for (int i = 0; i < t.size(); ++i)
+        a[i] = (a[i] + t[i] >= mod ? a[i] + t[i] - mod : a[i] + t[i]);
+    while (!a.empty() && a.back() == 0)
+        a.pop_back();
+    return a;
+}
+poly operator+(const poly &t)
+{
+    return poly(*this) += t;
+}
+
 poly exp(int n)
 {
     if (n == 1)
-        return { 1 };
+        return {1};
     poly g = exp((n + 1) >> 1);
-    return (g * (poly(1) - g.ln(n) + mod_xk(n))).mod_xk(n);
+    return (g * (poly{1} - g.ln(n) + mod_xk(n)).mod_xk(n)).mod_xk(n);
+}
+\end{lstlisting}
+
+\subsection{多项式快速幂}
+\begin{lstlisting}
+poly mul_xk(size_t k) const
+{  // 乘以 x^k
+    auto res = *this;
+    res.insert(res.begin(), k, 0);
+    return res;
 }
 
-//求(F(x))^k mod (x^n)的值
+poly div_xk(size_t k) const
+{  // 除以 x^k 也就是丢弃前k项
+    return poly(begin() + min(k, size()), end());
+}
+// 求(F(x))^k mod (x^n)的值
 poly pow(int k, int n)  // k < mod
 {
+    auto &a = *this;
     int cnt = 0, tag = 0;
-    if (all_of(a.begin(), a.end(), [](auto& p) {return p == 0;}))
-        return { 0 };
+    if (all_of(a.begin(), a.end(), [](auto &p) { return p == 0; }))
+        return {0};
     else {
-        for (const auto& c : a)
+        for (const auto &c : a)
             if (!c)
                 cnt++;
             else {
@@ -3085,20 +2994,21 @@ poly pow(int k, int n)  // k < mod
             }
     }
     if (1ll * k * cnt >= n)
-        return { 0 };
-    return (poly(k) * (poly(qpow(tag, mod - 2)) * div_xk(cnt)).ln(n)).exp(n).mul_xk(mul(k, cnt)).mod_xk(n) * poly(qpow(tag, k));
+        return {0};
+    return (poly{k} * (poly{qpow(tag, mod - 2)} * div_xk(cnt)).ln(n)).exp(n).mul_xk(1ll * k * cnt).mod_xk(n) * poly{qpow(tag, k)};
 }
 
-poly pow(const string& s, int n) // k >= mod
+poly pow(const string &s, int n)  // k >= mod
 {
+    auto &a = *this;
     int k = 0, k1 = 0;
     int cnt = 0, tag = 0;
-    for (const auto& c : s)
-        k = add(mul(k, 10), c - '0'), k1 = add(mul(k1, 10, mod - 1), c - '0', mod - 1);
-    if (all_of(a.begin(), a.end(), [](auto& p) {return p == 0;}))
-        return { 0 };
+    for (const auto &c : s)
+        k = (k * 10ll % mod + c - '0') % mod, k1 = (k1 * 10ll % (mod - 1) + c - '0') % (mod - 1);
+    if (all_of(a.begin(), a.end(), [](auto &p) { return p == 0; }))
+        return {0};
     else {
-        for (const auto& c : a)
+        for (const auto &c : a)
             if (!c)
                 cnt++;
             else {
@@ -3108,17 +3018,13 @@ poly pow(const string& s, int n) // k >= mod
     }
 
     if (cnt && s.size() > 7)
-        return { 0 };
+        return {0};
     else if (1ll * cnt * k >= n)
-        return { 0 };
+        return {0};
     else
-        return (poly(k) * (poly(qpow(tag, mod - 2)) * div_xk(cnt)).ln(n)).exp(n).mul_xk(mul(k, cnt)).mod_xk(n) * poly(qpow(tag, k1));
-}
-};
-};
-using namespace algebra;
+        return (poly{k} * (poly{qpow(tag, mod - 2)} * div_xk(cnt)).ln(n)).exp(n).mul_xk(1ll * k * cnt).mod_xk(n) * poly{qpow(tag, k1)};
+    }
 \end{lstlisting}
-
 \subsection{常用组合公式}
 $\displaystyle \sum_{k=1}^{n}(2k-1)^{2}=\frac{n(4n^{2}-1)}{3}$\\
 $\displaystyle \sum_{k=1}^{n}k^{3}=\left(\frac{n(n+1)}{2}\right)^{2}$\\
@@ -3156,9 +3062,6 @@ $10^{7}$内所有数的因子大小的和最大约为$5\times 10^{7}$\\
 
 \subsection{斯特林数}
 表示将n个不同元素构成m个圆排列的数目
-\begin{lstlisting}
-
-\end{lstlisting}
 
 \subsection{第二类斯特林数}
 表示将n个不同元素分成m个集合的方案数,不能有空集合\\
@@ -3166,19 +3069,18 @@ $10^{7}$内所有数的因子大小的和最大约为$5\times 10^{7}$\\
     $S(n,m)=\frac{1}{m!}\sum_{k=0}^{m}(-1)^{k}\binom{m}{k}(m-k)^{n} $
 \end{large}
 
-\subsection{欧拉数}
-\begin{lstlisting}
-
-\end{lstlisting}
-
-\subsection{贝尔数}
-\begin{lstlisting}
-
-\end{lstlisting}
-
 \subsection{复数操作}
+\begin{LARGE}
+    $z^{-1}=\frac{\overline{z} }{|z|^{2}}$
+\end{LARGE}
 \begin{lstlisting}
-
+std::conj(z) //返回复数z的共轭
+std::norm(z) //返回复数z的模平方
+std::abs(z) //返回复数z的模
+std::arg(z) //返回复数z的相位（角度）
+z.real(),z.imag() //获取实部和虚部
+z.real(value),z.imag(value) //修改为value
+std::exp,log,pow,sqrt //指数、对数、幂和平方根
 \end{lstlisting}
 
 \subsection{康托展开}
@@ -3273,10 +3175,6 @@ ld integr(ld l, ld r, ld eps = eps)
 }
 \end{lstlisting}
 
-\subsection{prufer序列}
-\begin{lstlisting}
-    
-\end{lstlisting}
 \section{数据结构}
 
 \subsection{并查集}
