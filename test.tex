@@ -378,6 +378,71 @@ int main()
 }
 \end{lstlisting}
 
+\subsection{Boruvka最小生成树}
+\begin{lstlisting}
+const int N = 200005;
+const int M = 2 * N;
+
+int fa[N];
+int get(int x)
+{
+    if (x == fa[x])
+        return x;
+    return fa[x] = get(fa[x]);
+}
+
+void merge(int x, int y)
+{
+    int a = get(x);
+    int b = get(y);
+    if (a == b)
+        return;
+    fa[b] = a;
+    return;
+}
+
+struct node {
+    int u, v, w;
+};
+vector<node> e;
+ll boruvka(const vector<node> &e, int n, int m)
+{
+    for (int i = 1; i <= n; ++i)
+        fa[i] = i;
+    vector<int> id(n + 5, -1);
+    int cnt = n - 1;
+    bool flag = true;
+    ll ans = 0;
+    while (flag) {
+        flag = false;
+        for (int i = 0; i < m; ++i) {
+            int x = get(e[i].u), y = get(e[i].v);
+            if (x != y) {
+                if (id[x] == -1 || e[id[x]].w > e[i].w)
+                    id[x] = i;
+                if (id[y] == -1 || e[id[y]].w > e[i].w)
+                    id[y] = i;
+            }
+        }
+        for (int i = 1; i <= n; ++i)
+            if (get(i) == i && id[i] != -1 && get(e[id[i]].u) != get(e[id[i]].v)) {
+                merge(e[id[i]].u, e[id[i]].v);
+                ans += e[id[i]].w;
+                // cout << id[i] << '\n';
+                --cnt;
+                flag = true;
+            }
+        for (int i = 1; i <= n; ++i)
+            id[i] = -1;
+    }
+
+    if (!cnt)
+        return ans;
+    else
+        return -1;
+}
+\end{lstlisting}
+
 \subsection{Kruscal重构树}
 与 Kruscal 算法类似，其中每次操作建立虚点将合并的两个点集结合。
 \\虚点的权值即为边权
@@ -3175,6 +3240,31 @@ ld integr(ld l, ld r, ld eps = eps)
 }
 \end{lstlisting}
 
+\subsection{行列式求值}
+\begin{lstlisting}
+const int N = 605;
+int a[N][N];
+ll cal(int n)
+{
+    ll ans = 1, w = 1;
+    for (int i = 1; i <= n; ++i)
+        for (int j = i + 1; j <= n; ++j) {
+            while (a[i][i]) {
+                int div = a[j][i] / a[i][i];
+                for (int k = i; k <= n; ++k)
+                    a[j][k] = (a[j][k] - 1ll * div * a[i][k] % mod + mod) % mod;
+                swap(a[i], a[j]);
+                w *= -1;
+            }
+            swap(a[i], a[j]);
+            w *= -1;
+        }
+    for (int i = 1; i <= n; ++i)
+        (ans *= a[i][i]) %= mod;
+    ans *= w;
+    return (mod + ans) % mod;
+}
+\end{lstlisting}
 \section{数据结构}
 
 \subsection{并查集}
@@ -4833,8 +4923,8 @@ string minu(string a, string b)
     $\displaystyle gcd(i,j)=\sum_{d|i \wedge  d|j}\phi (d)$\\
     $\displaystyle \sum_{i=1}^{n}\sum_{j=1}^{n}[gcd(i,j)=x]=2 \times pre\phi (\lfloor \frac{n}{x} \rfloor)-1$\\
     $\displaystyle \sum_{i=1}^{n}\sum_{j=1}^{m}[gcd(i,j)=x]=\sum_{d=1}^{\lfloor \frac{n}{x} \rfloor}\left(\mu(d) \lfloor \frac{n}{dx} \rfloor  \lfloor \frac{m}{dx} \rfloor\right)$\\
-    $\displaystyle \sum_{i=1}^{n}\sum_{j=1}^{n}gcd(i,j)=\sum_{d=1}^{n}\mu(d){\lfloor \frac{n}{d} \rfloor}^2$\\
-    $\displaystyle \sum_{i=1}^{n}\sum_{j=1}^{m}gcd(i,j)=\sum_{d=1}^{n}\mu(d){\lfloor \frac{n}{d} \rfloor}{\lfloor \frac{m}{d} \rfloor}$\\
+    $\displaystyle \sum_{i=1}^{n}\sum_{j=1}^{n}gcd(i,j)=\sum_{d=1}^{n}\phi(d){\lfloor \frac{n}{d} \rfloor}^2$\\
+    $\displaystyle \sum_{i=1}^{n}\sum_{j=1}^{m}gcd(i,j)=\sum_{d=1}^{n}\phi(d){\lfloor \frac{n}{d} \rfloor}{\lfloor \frac{m}{d} \rfloor}$\\
     $\displaystyle gcd(x^a-y^a,x^b-y^b)=x^{gcd(a,b)}-y^{gcd(a,b)}$\\
     $\displaystyle \sum_{i=1}^{n}i[gcd(i,n)=1]=\frac{[n=1]+n\phi(n)}{2}$
     $\displaystyle\sum_{i=1}^{n}\sum_{j=1}^{i}j[gcd(i,j)=1]=\frac{1}{2}\sum_{i=1}^{n}i\phi(i)+\frac{[n \geq 1]}{2}$\\
