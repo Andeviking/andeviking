@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999996 (TeX Live 2024) (preloaded format=xelatex 2024.4.5)  7 NOV 2024 19:56
+This is XeTeX, Version 3.141592653-2.6-0.999996 (TeX Live 2024) (preloaded format=xelatex 2024.4.5)  28 NOV 2024 14:01
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -709,146 +709,154 @@ Underfull \hbox (badness 10000) in paragraph at lines 1842--1846
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [16] [17]
+Underfull \vbox (badness 2318) has occurred while \output is active []
+
+ [18] [19]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
- [18]
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 2492--2506
+ [20]
+Underfull \hbox (badness 10000) in paragraph at lines 2655--2669
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 2492--2506
+Underfull \hbox (badness 10000) in paragraph at lines 2655--2669
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 2492--2506
+Underfull \hbox (badness 10000) in paragraph at lines 2655--2669
 
  []
 
-[19]
-Underfull \hbox (badness 3547) in paragraph at lines 2508--2515
+
+Underfull \hbox (badness 3547) in paragraph at lines 2671--2678
 [] \OT1/cmr/m/n/9 = [] \OMS/cmsy/m/n/9 ^^@ [] [] \OT1/cmr/m/n/9 + [] [] \OMS/cmsy/m/n/9 ^^@
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 2508--2515
+Underfull \hbox (badness 10000) in paragraph at lines 2671--2678
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 2508--2515
+Underfull \hbox (badness 10000) in paragraph at lines 2671--2678
 [] \OT1/cmr/m/n/9 = [] [] \OMS/cmsy/m/n/9 ^^@ [] [] \OT1/cmr/m/n/9 +
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 2508--2515
+Underfull \hbox (badness 10000) in paragraph at lines 2671--2678
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 2508--2515
+Underfull \hbox (badness 10000) in paragraph at lines 2671--2678
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 2522--2535
+Underfull \hbox (badness 10000) in paragraph at lines 2685--2698
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 2522--2535
+Underfull \hbox (badness 10000) in paragraph at lines 2685--2698
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 2522--2535
+Underfull \hbox (badness 10000) in paragraph at lines 2685--2698
 
  []
 
-
+[21]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
- [20] [21]
+ [22]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
- [22] [23]
-Underfull \hbox (badness 10000) in paragraph at lines 3094--3104
+ [23]
+Underfull \vbox (badness 10000) has occurred while \output is active []
 
- []
+ [24]
+Underfull \vbox (badness 10000) has occurred while \output is active []
 
-[24]
-Underfull \hbox (badness 10000) in paragraph at lines 3106--3107
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 3121--3123
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 3204--3212
-
- []
-
-[25] [26]
-Underfull \vbox (badness 2318) has occurred while \output is active []
+ [25] [26]
+Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [27]
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [28] [29]
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [30] [31] [32]
-Underfull \hbox (badness 10000) in paragraph at lines 4150--4158
+Underfull \hbox (badness 10000) in paragraph at lines 3481--3491
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 4150--4158
+Underfull \hbox (badness 10000) in paragraph at lines 3493--3494
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 3508--3510
+
+ []
+
+[28]
+Underfull \hbox (badness 10000) in paragraph at lines 3591--3599
+
+ []
+
+[29] [30]
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [31] [32]
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [33] [34] [35]
+Underfull \hbox (badness 10000) in paragraph at lines 4537--4545
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 4537--4545
+
+ []
+
+[36] [37]
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [38] [39] [40]
+Underfull \hbox (badness 10000) in paragraph at lines 5155--5158
 
  []
 
 
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
- [33] [34]
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [35] [36] [37]
-Underfull \hbox (badness 10000) in paragraph at lines 4768--4771
+ [41]
+Underfull \hbox (badness 10000) in paragraph at lines 5242--5245
 
  []
 
-[38]
-Underfull \hbox (badness 10000) in paragraph at lines 4921--4946
+
+Underfull \hbox (badness 10000) in paragraph at lines 5319--5344
 [] \OML/cmm/m/it/12 i\OT1/cmr/m/n/12 [\OML/cmm/m/it/12 gcd\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 i; n\OT1/cmr/m/n/12 ) = 1] = []$
  []
 
 
-Overfull \hbox (19.46178pt too wide) in paragraph at lines 4921--4946
+Overfull \hbox (19.46178pt too wide) in paragraph at lines 5319--5344
 [] [] \OML/cmm/m/it/12 ^^[\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 gcd\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 i; j\OT1/cmr/m/n/12 )) = [] \OML/cmm/m/it/12 ^^[\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 x\OT1/cmr/m/n/12 ) [] [] []$ 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 4921--4946
+Underfull \hbox (badness 10000) in paragraph at lines 5319--5344
 
  []
 
+[42] [43
 
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [39] [40
-
-] [41
+] [44
 
 
 ] (./test.aux)
@@ -857,15 +865,15 @@ LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2022/08/05>
  ***********
 Package rerunfilecheck Info: File `test.out' has not changed.
-(rerunfilecheck)             Checksum: BC810117FE244F57AEC85656DA53885B;13653.
+(rerunfilecheck)             Checksum: 93A61697E2E7B94FFC34DA4743157439;14100.
  ) 
 Here is how much of TeX's memory you used:
- 17501 strings out of 474773
- 348834 string characters out of 5757725
- 2756839 words of memory out of 5000000
- 39400 multiletter control sequences out of 15000+600000
+ 17577 strings out of 474773
+ 349526 string characters out of 5757725
+ 2797839 words of memory out of 5000000
+ 39476 multiletter control sequences out of 15000+600000
  570271 words of font info for 121 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  87i,12n,93p,588b,1778s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on test.pdf (44 pages).
+Output written on test.pdf (47 pages).

@@ -2155,7 +2155,64 @@ $\displaystyle m=\left \lfloor \frac{an+b}{c} \right \rfloor$\\
 $f(a,b,c,n)=nm-f(c,c-b-1,a,m-1)$\\
 $g(a,b,c,n)=\frac{1}{2}[mn(n+1)-h(c,c-b-1,a,m-1)-f(c,c-b-1,a,m-1)]$\\
 $h(a,b,c,n)=nm(m+1)-2g(c,c-b-1,a,m-1)-2f(c,c-b-1,a,m-1)-f(a,b,c,n)$
+\begin{lstlisting}
+constexpr ll inv2 = qpow(2, mod - 2);
+constexpr ll inv6 = qpow(6, mod - 2);
 
+struct data_t {
+    ll f = 0, g = 0, h = 0;
+};
+
+data_t calc(ll n, ll a, ll b, ll c)
+{
+    ll ac = a / c, bc = b / c;
+    ll m = (a * n + b) / c;
+    ll n1 = n + 1, n21 = n * 2 + 1;
+
+    data_t d;
+    if (!a) {
+        d.f = bc * n1 % mod;
+        d.g = bc * n % mod * n1 % mod * inv2 % mod;
+        d.h = bc * bc % mod * n1 % mod;
+        return d;
+    }
+    if (a >= c || b >= c) {
+        d.f = n * n1 % mod * inv2 % mod * ac % mod +
+              bc * n1 % mod;
+        d.g = ac * n % mod * n1 % mod * n21 % mod * inv6 % mod +
+              bc * n % mod * n1 % mod * inv2 % mod;
+        d.h = ac * ac % mod * n % mod * n1 % mod * n21 % mod * inv6 % mod +
+              bc * bc % mod * n1 % mod +
+              ac * bc % mod * n % mod * n1 % mod;
+
+        d.f %= mod;
+        d.g %= mod;
+        d.h %= mod;
+
+        data_t e = calc(n, a % c, b % c, c);
+
+        d.h += e.h +
+               2 * bc * e.f % mod +
+               2 * ac * e.g % mod;
+        d.g += e.g;
+        d.f += e.f;
+
+        d.f %= mod;
+        d.g %= mod;
+        d.h %= mod;
+        return d;
+    }
+
+    data_t e = calc(m - 1, c, c - b - 1, a);
+    d.f = n * m % mod - e.f;
+    d.f = (d.f % mod + mod) % mod;
+    d.g = m * n % mod * n1 % mod - e.h - e.f;
+    d.g = (d.g * inv2 % mod + mod) % mod;
+    d.h = n * m % mod * (m + 1) % mod - 2 * e.g - 2 * e.f - d.f;
+    d.h = (d.h % mod + mod) % mod;
+    return d;
+}
+\end{lstlisting}
 \subsection{扩展中国剩余定理}
 \begin{lstlisting}
 //时间复杂度 O(nlogn)
@@ -2183,7 +2240,113 @@ ll excrt(int n)
 
 \subsection{BSGS算法}
 \begin{lstlisting}
+int BSGS(int a, int n, int mod, int st = 1)
+{
+    unordered_map<int, int> mp;
+    int m = ceill(sqrtl(mod));
+    int s = 1;
+    for (int i = 0; i < m; ++i) {
+        mp[1ll * s * n % mod] = i;
+        s = 1ll * s * a % mod;
+    }
+    int temp = s;
+    s = st;
+    for (int i = 0; i <= m; ++i) {
+        if (mp.find(s) != mp.end() && i * m >= mp[s])
+            return i * m - mp[s];
+        s = 1ll * s * temp % mod;
+    }
+    return -1;
+}
 
+int exBSGS(int a, int n, int mod)
+{
+    a %= mod, n %= mod;
+    if (n == 1 || mod == 1)
+        return 0;
+    int cnt = 0;
+    int d, now = 1;
+    while ((d = gcd(a, mod)) ^ 1) {
+        if (n % d)
+            return -1;
+        cnt++;
+        n /= d;
+        mod /= d;
+        now = (1ll * now * a / d) % mod;
+        if (now == n)
+            return cnt;
+    }
+
+    int ans = BSGS(a, n, mod, now);
+    if (ans == -1)
+        return -1;
+    else
+        return ans + cnt;
+}
+
+//固定模数与原根，O(P^0.75/log^0.5 P)预处理，O(logP)查询
+//查询的是a^x=n中的a，返回的是最小x
+//先init，然后调用get即可，solve不需要知道
+struct BSGS_O {
+    __gnu_pbds::gp_hash_table<int, int> mp;
+    int g, mod, block, tag;
+
+    vector<int> h, p, v;
+    int h0, sz;
+    int solve(int x)
+    {
+        int w = x;
+        for (int i = 0; i <= mod / block; ++i) {
+            if (mp.find(w) != mp.end())
+                return i * block + mp[w];
+            w = 1ll * w * tag % mod;
+        }
+        return -1;
+    }
+
+    void init(int _g, int _mod)
+    {
+        g = _g, mod = _mod, block = sqrtl(1ll * mod * sqrtl(mod) / logl(mod));
+        mp.clear();
+        tag = qpow(qpow(g, block, mod), mod - 2, mod);
+
+        int w = 1;
+        for (int i = 0; i < block; ++i) {
+            mp[w] = i;
+            w = 1ll * w * g % mod;
+        }
+
+        sz = sqrtl(mod) + 1;
+        h.resize(sz + 5), p.resize(sz + 5), v.resize(sz + 5);
+        h0 = solve(mod - 1);
+
+        h[1] = 0;
+        int idx = 0;
+        for (int i = 2; i <= sz; ++i) {
+            if (!v[i]) {
+                p[++idx] = i;
+                h[i] = solve(i);
+            }
+            for (int j = 1; j <= idx && p[j] <= sz / i; ++j) {
+                h[i * p[j]] = (h[i] + h[p[j]]) % (mod - 1);
+                v[i * p[j]] = true;
+                if (i % p[j] == 0)
+                    break;
+            }
+        }
+    }
+
+    int get(int x)
+    {
+        if (x <= sz)
+            return h[x];
+        int now = mod / x, r = mod % x;
+        if (r < x - r)
+            return ((h0 + get(r)) % (mod - 1) - h[now] + mod - 1) % (mod - 1);
+        else
+            return (get(x - r) - h[now + 1] + mod - 1) % (mod - 1);
+    }
+} bsgs;
 \end{lstlisting}
 
 \subsection{矩阵运算}
@@ -2864,6 +3027,156 @@ poly operator*(poly a, const poly &t)
 using namespace fft;
 \end{lstlisting}
 
+\subsection{任意模多项式(MTT)}
+\begin{lstlisting}
+namespace mtt
+{
+    using Type = double;
+    using cp = complex<Type>;
+    using poly = vector<int>;
+
+    static constexpr Type pi = acosl(-1);
+    static constexpr int N = 262150;
+    static constexpr int B = 1 << 15;
+
+    static constexpr int mod = 1000000007;
+    static cp wn[N];
+    static int rev[N];
+
+    void DIF(vector<cp> &f, int n)
+    {
+        for (int l = n >> 1, r = n; l; r = l, l >>= 1) {
+            for (int k = 0; k < l; ++k) {
+                cp x = f[k], y = f[k + l];
+                f[k] = x + y, f[k + l] = x - y;
+            }
+            for (int j = r, idx = 1; j < n; j += r, ++idx)
+                for (int k = j; k < j + l; ++k) {
+                    cp x = f[k], y = f[k + l] * wn[idx];
+                    f[k] = x + y, f[k + l] = x - y;
+                }
+        }
+    }
+
+    void DIT(vector<cp> &f, int n)
+    {
+        for (int l = 1, r = 2; l < n; l = r, r <<= 1) {
+            for (int k = 0; k < l; ++k) {
+                cp x = f[k], y = f[k + l];
+                f[k] = x + y, f[k + l] = x - y;
+            }
+            for (int j = r, idx = 1; j < n; j += r, ++idx)
+                for (int k = j; k < j + l; ++k) {
+                    cp x = f[k], y = f[k + l];
+                    f[k] = x + y, f[k + l] = (x - y) * conj(wn[idx]);
+                }
+        }
+    }
+
+    int com_size(int n, int m)
+    {
+        if (!n || !m)
+            return 0;
+        auto sz = 2 << __lg(n + m - 1);
+        int cnt = __builtin_ctz(sz);
+        for (int i = 0; i < sz; ++i)
+            rev[i] = (rev[i >> 1] >> 1) | ((i & 1) << (cnt - 1));
+        wn[0] = {1};
+        int t = (__lg(sz) >> 1);
+        int len = (1 << t);
+        vector<cp> bas(len << 1);
+        const Type p0 = acosl(-1) / len, p1 = p0 / len;
+
+        int p = 0;
+        for (int i = 0, j = (len * 3) >> 1; i < len;
+                p -= len - (j >> __builtin_ctz(++i))) {
+            bas[i] = polar((Type)1, p * p0);
+            bas[i | len] = polar((Type)1, p * p1);
+        }
+
+        for (int i = 1; i < (sz >> 1); ++i)
+            wn[i] = bas[i & (len - 1)] * bas[len | (i >> t)];
+        return sz;
+    }
+
+    void mult(poly &a, const poly &b)
+    {
+        int n = com_size(a.size(), b.size());
+        vector<cp> f(n), g(n);
+        for (int i = 0; i < a.size(); ++i)
+            f[i] = {a[i] / B, a[i] % B};
+        for (int i = 0; i < b.size(); ++i)
+            g[i] = {b[i] / B, b[i] % B};
+        DIF(f, n), DIF(g, n);
+
+        Type fx = .5L / n;
+        for (int i = 0; i < min(2, n); ++i) {
+            cp p = f[i], r = g[i] * fx;
+            f[i] = (p + conj(p)) * r;
+            g[i] = (conj(p) - p) * r;
+        }
+
+        for (int k = 2, m = 3; k < n; k <<= 1, m <<= 1)
+            for (int i = k, j = k << 1; --j, i < m; ++i) {
+                cp p = f[i], q = f[j], r = g[i] * fx, s = g[j] * fx;
+                f[i] = (p + conj(q)) * r;
+                g[i] = (conj(q) - p) * r;
+                f[j] = (q + conj(p)) * s;
+                g[j] = (conj(p) - q) * s;
+            }
+        DIT(f, n), DIT(g, n);
+
+        a.resize(n);
+        for (int i = 0; i < n; ++i) {
+            int aa = (ll)roundl(f[i].real()) % mod * B * B % mod;
+            int bb = (ll)roundl(f[i].imag()) % mod * B % mod;
+            int cc = (ll)roundl(-g[i].imag()) % mod * B % mod;
+            int dd = (ll)roundl(g[i].real()) % mod;
+            a[i] = (1ll * aa + bb + cc + dd) % mod;
+        }
+    }
+
+    poly &operator*=(poly &a, const poly &t)
+    {
+        mult(a, t);
+        return a;
+    }
+
+    poly operator*(poly a, const poly &t)
+    {
+        return a *= t;
+    }
+
+    int qpow(int a, long long b)
+    {
+        int ans = 1;
+        for (; b; b >>= 1) {
+            if (b & 1)
+                ans = 1ll * ans * a % mod;
+            a = 1ll * a * a % mod;
+        }
+        return ans;
+    }
+    poly inv(const poly &f, int n)
+    {
+        if (n == 1)
+            return {qpow(f[0], mod - 2)};
+        poly h = inv(f, (n + 1) >> 1);
+        auto g = f * h * h;
+        for (auto &c : h)
+            (c += c) %= mod;
+        g.resize(n);
+        h.resize(n);
+
+        for (int i = 0; i < n; ++i)
+            h[i] = (h[i] + mod - g[i]) % mod;
+        return h;
+    }
+};
+
+using namespace mtt;
+\end{lstlisting}
+
 \subsection{快速沃尔什变换(FWT)}
 \begin{lstlisting}
 //NTT可以处理下标相加，而FWT主要是处理下标的其他逻辑运算
@@ -3031,17 +3344,18 @@ poly exp(int n)
 
 \subsection{多项式快速幂}
 \begin{lstlisting}
-poly mul_xk(size_t k) const
-{  // 乘以 x^k
-    auto res = *this;
-    res.insert(res.begin(), k, 0);
-    return res;
+poly operator*=(const int &t)
+{
+    auto &a = *this;
+    for (auto &c : a)
+        c = 1ll * c * t % mod;
+    return a;
+}
+poly operator*(const int &t)
+{
+    return poly(*this) *= t;
 }
 
-poly div_xk(size_t k) const
-{  // 除以 x^k 也就是丢弃前k项
-    return poly(begin() + min(k, size()), end());
-}
 // 求(F(x))^k mod (x^n)的值
 poly pow(int k, int n)  // k < mod
 {
@@ -3060,7 +3374,7 @@ poly pow(int k, int n)  // k < mod
     }
     if (1ll * k * cnt >= n)
         return {0};
-    return (poly{k} * (poly{qpow(tag, mod - 2)} * div_xk(cnt)).ln(n)).exp(n).mul_xk(1ll * k * cnt).mod_xk(n) * poly{qpow(tag, k)};
+    return ((poly{qpow(tag, mod - 2)} * div_xk(cnt)).ln(n) * k).exp(n).mul_xk(1ll * k * cnt).mod_xk(n) * qpow(tag, k);
 }
 
 poly pow(const string &s, int n)  // k >= mod
@@ -3087,8 +3401,81 @@ poly pow(const string &s, int n)  // k >= mod
     else if (1ll * cnt * k >= n)
         return {0};
     else
-        return (poly{k} * (poly{qpow(tag, mod - 2)} * div_xk(cnt)).ln(n)).exp(n).mul_xk(1ll * k * cnt).mod_xk(n) * poly{qpow(tag, k1)};
+        return ((poly{qpow(tag, mod - 2)} * div_xk(cnt)).ln(n) * k).exp(n).mul_xk(1ll * k * cnt).mod_xk(n) * qpow(tag, k1);
+}
+\end{lstlisting}
+
+\subsection{多项式开根}
+\begin{lstlisting}
+int BSGS(int a, int n)
+{
+    unordered_map<int, int> mp;
+    int m = ceill(sqrtl(mod));
+    int s = n;
+    for (int i = 0; i < m; ++i) {
+        mp[s] = i;
+        s = 1ll * s * a % mod;
     }
+    int temp = qpow(a, m);
+    s = 1;
+    for (int i = 0; i <= m; ++i) {
+        if (mp.find(s) != mp.end() && i * m >= mp[s])
+            return i * m - mp[s];
+        s = 1ll * s * temp % mod;
+    }
+    return -1;
+}
+poly sqrt_k(int k, int n)  // f[0]是mod下k次剩余
+{
+    poly f(*this);
+    int s = f[0], inv = qpow(s, mod - 2);
+    for (auto &c : f)
+        c = 1ll * c * inv % mod;
+    f = f.ln(n);
+    int p = qpow(k, mod - 2);
+    for (auto &c : f)
+        c = 1ll * c * p % mod;
+    f = f.exp(n);
+
+    s = BSGS(qpow(g, k), s);
+    s = qpow(g, s);
+    s = min(s, mod - s); //求字典序最小解，按需变化
+
+    for (auto &c : f)
+        c = 1ll * c * s % mod;
+    return f;
+}
+\end{lstlisting}
+
+\subsection{多项式三角函数}
+\begin{lstlisting}
+poly cos(int n)
+{
+    poly f(*this);
+    int img = qpow(g, (mod - 1) >> 2);
+    f = (f * img).exp(n);
+    poly g = f.inv(n);
+    int inv = qpow(2, mod - 2);
+    poly h(n);
+    f.resize(n), g.resize(n);
+    for (int i = 0; i < n; ++i)
+        h[i] = 1ll * inv * (f[i] + g[i]) % mod;
+    return h;
+}
+
+poly sin(int n)
+{
+    poly f(*this);
+    int img = qpow(g, (mod - 1) >> 2);
+    f = (f * img).exp(n);
+    poly g = f.inv(n);
+    int inv = qpow(img << 1, mod - 2);
+    poly h(n);
+    f.resize(n), g.resize(n);
+    for (int i = 0; i < n; ++i)
+        h[i] = 1ll * inv * (f[i] - g[i] + mod) % mod;
+    return h;
+}
 \end{lstlisting}
 \subsection{常用组合公式}
 $\displaystyle \sum_{k=1}^{n}(2k-1)^{2}=\frac{n(4n^{2}-1)}{3}$\\
@@ -4845,6 +5232,17 @@ int main()
     dfs(1,0,1);
 }
 \end{lstlisting}
+\subsection{欧拉降幂}
+\begin{large}
+    $$    a^n \equiv
+        \begin{cases}
+            a^{n \mod \varphi(m)},                       & \text{if } \gcd(a, m) = 1    \\
+            a^{\min(n, n \mod \varphi(m) + \varphi(m))}, & \text{if } \gcd(a, m) \neq 1
+        \end{cases}
+    $$
+    \\
+\end{large}
+
 \subsection{切比雪夫距离与曼哈顿距离转化}
 切比雪夫距离：$max(\left\lvert x_1-x_2 \right\rvert, \left\lvert y_1-y_2 \right\rvert)$
 \\
