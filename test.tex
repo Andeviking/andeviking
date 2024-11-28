@@ -2856,6 +2856,7 @@ ll SigmaPhi(ll Key)
 
 \subsection{快速数论变换(NTT)}
 \begin{lstlisting}
+// 234727520901168
 namespace ntt
 {
 static constexpr int N = 262150;
@@ -2943,6 +2944,29 @@ public:
 };
 }
 using namespace ntt;
+
+void check()
+{
+    poly f;
+    auto init = [&]() {
+        f.resize(100000);
+        int idx = 0;
+        for (auto &c : f)
+            c = (++idx);
+    };
+
+    auto get = [&]() {
+        ll ans = 0;
+        ll idx = 0;
+        for (const auto &c : f)
+            ans ^= ((++idx) * c);
+        return ans;
+    };
+    init();
+    int n = f.size();
+    // todo: function
+    assert(get() == VALUE);
+}
 \end{lstlisting}
 
 \subsection{快速傅立叶变换(FFT)}
@@ -3031,147 +3055,147 @@ using namespace fft;
 \begin{lstlisting}
 namespace mtt
 {
-    using Type = double;
-    using cp = complex<Type>;
-    using poly = vector<int>;
+using Type = double;
+using cp = complex<Type>;
+using poly = vector<int>;
 
-    static constexpr Type pi = acosl(-1);
-    static constexpr int N = 262150;
-    static constexpr int B = 1 << 15;
+static constexpr Type pi = acosl(-1);
+static constexpr int N = 262150;
+static constexpr int B = 1 << 15;
 
-    static constexpr int mod = 1000000007;
-    static cp wn[N];
-    static int rev[N];
+static constexpr int mod = 1000000007;
+static cp wn[N];
+static int rev[N];
 
-    void DIF(vector<cp> &f, int n)
-    {
-        for (int l = n >> 1, r = n; l; r = l, l >>= 1) {
-            for (int k = 0; k < l; ++k) {
-                cp x = f[k], y = f[k + l];
+void DIF(vector<cp> &f, int n)
+{
+    for (int l = n >> 1, r = n; l; r = l, l >>= 1) {
+        for (int k = 0; k < l; ++k) {
+            cp x = f[k], y = f[k + l];
+            f[k] = x + y, f[k + l] = x - y;
+        }
+        for (int j = r, idx = 1; j < n; j += r, ++idx)
+            for (int k = j; k < j + l; ++k) {
+                cp x = f[k], y = f[k + l] * wn[idx];
                 f[k] = x + y, f[k + l] = x - y;
             }
-            for (int j = r, idx = 1; j < n; j += r, ++idx)
-                for (int k = j; k < j + l; ++k) {
-                    cp x = f[k], y = f[k + l] * wn[idx];
-                    f[k] = x + y, f[k + l] = x - y;
-                }
-        }
     }
+}
 
-    void DIT(vector<cp> &f, int n)
-    {
-        for (int l = 1, r = 2; l < n; l = r, r <<= 1) {
-            for (int k = 0; k < l; ++k) {
+void DIT(vector<cp> &f, int n)
+{
+    for (int l = 1, r = 2; l < n; l = r, r <<= 1) {
+        for (int k = 0; k < l; ++k) {
+            cp x = f[k], y = f[k + l];
+            f[k] = x + y, f[k + l] = x - y;
+        }
+        for (int j = r, idx = 1; j < n; j += r, ++idx)
+            for (int k = j; k < j + l; ++k) {
                 cp x = f[k], y = f[k + l];
-                f[k] = x + y, f[k + l] = x - y;
+                f[k] = x + y, f[k + l] = (x - y) * conj(wn[idx]);
             }
-            for (int j = r, idx = 1; j < n; j += r, ++idx)
-                for (int k = j; k < j + l; ++k) {
-                    cp x = f[k], y = f[k + l];
-                    f[k] = x + y, f[k + l] = (x - y) * conj(wn[idx]);
-                }
+    }
+}
+
+int com_size(int n, int m)
+{
+    if (!n || !m)
+        return 0;
+    auto sz = 2 << __lg(n + m - 1);
+    int cnt = __builtin_ctz(sz);
+    for (int i = 0; i < sz; ++i)
+        rev[i] = (rev[i >> 1] >> 1) | ((i & 1) << (cnt - 1));
+    wn[0] = {1};
+    int t = (__lg(sz) >> 1);
+    int len = (1 << t);
+    vector<cp> bas(len << 1);
+    const Type p0 = acosl(-1) / len, p1 = p0 / len;
+
+    int p = 0;
+    for (int i = 0, j = (len * 3) >> 1; i < len;
+            p -= len - (j >> __builtin_ctz(++i))) {
+        bas[i] = polar((Type)1, p * p0);
+        bas[i | len] = polar((Type)1, p * p1);
+    }
+
+    for (int i = 1; i < (sz >> 1); ++i)
+        wn[i] = bas[i & (len - 1)] * bas[len | (i >> t)];
+    return sz;
+}
+
+void mult(poly &a, const poly &b)
+{
+    int n = com_size(a.size(), b.size());
+    vector<cp> f(n), g(n);
+    for (int i = 0; i < a.size(); ++i)
+        f[i] = {a[i] / B, a[i] % B};
+    for (int i = 0; i < b.size(); ++i)
+        g[i] = {b[i] / B, b[i] % B};
+    DIF(f, n), DIF(g, n);
+
+    Type fx = .5L / n;
+    for (int i = 0; i < min(2, n); ++i) {
+        cp p = f[i], r = g[i] * fx;
+        f[i] = (p + conj(p)) * r;
+        g[i] = (conj(p) - p) * r;
+    }
+
+    for (int k = 2, m = 3; k < n; k <<= 1, m <<= 1)
+        for (int i = k, j = k << 1; --j, i < m; ++i) {
+            cp p = f[i], q = f[j], r = g[i] * fx, s = g[j] * fx;
+            f[i] = (p + conj(q)) * r;
+            g[i] = (conj(q) - p) * r;
+            f[j] = (q + conj(p)) * s;
+            g[j] = (conj(p) - q) * s;
         }
+    DIT(f, n), DIT(g, n);
+
+    a.resize(n);
+    for (int i = 0; i < n; ++i) {
+        int aa = (ll)roundl(f[i].real()) % mod * B * B % mod;
+        int bb = (ll)roundl(f[i].imag()) % mod * B % mod;
+        int cc = (ll)roundl(-g[i].imag()) % mod * B % mod;
+        int dd = (ll)roundl(g[i].real()) % mod;
+        a[i] = (1ll * aa + bb + cc + dd) % mod;
     }
+}
 
-    int com_size(int n, int m)
-    {
-        if (!n || !m)
-            return 0;
-        auto sz = 2 << __lg(n + m - 1);
-        int cnt = __builtin_ctz(sz);
-        for (int i = 0; i < sz; ++i)
-            rev[i] = (rev[i >> 1] >> 1) | ((i & 1) << (cnt - 1));
-        wn[0] = {1};
-        int t = (__lg(sz) >> 1);
-        int len = (1 << t);
-        vector<cp> bas(len << 1);
-        const Type p0 = acosl(-1) / len, p1 = p0 / len;
+poly &operator*=(poly &a, const poly &t)
+{
+    mult(a, t);
+    return a;
+}
 
-        int p = 0;
-        for (int i = 0, j = (len * 3) >> 1; i < len;
-                p -= len - (j >> __builtin_ctz(++i))) {
-            bas[i] = polar((Type)1, p * p0);
-            bas[i | len] = polar((Type)1, p * p1);
-        }
+poly operator*(poly a, const poly &t)
+{
+    return a *= t;
+}
 
-        for (int i = 1; i < (sz >> 1); ++i)
-            wn[i] = bas[i & (len - 1)] * bas[len | (i >> t)];
-        return sz;
+int qpow(int a, long long b)
+{
+    int ans = 1;
+    for (; b; b >>= 1) {
+        if (b & 1)
+            ans = 1ll * ans * a % mod;
+        a = 1ll * a * a % mod;
     }
+    return ans;
+}
+poly inv(const poly &f, int n)
+{
+    if (n == 1)
+        return {qpow(f[0], mod - 2)};
+    poly h = inv(f, (n + 1) >> 1);
+    auto g = f * h * h;
+    for (auto &c : h)
+        (c += c) %= mod;
+    g.resize(n);
+    h.resize(n);
 
-    void mult(poly &a, const poly &b)
-    {
-        int n = com_size(a.size(), b.size());
-        vector<cp> f(n), g(n);
-        for (int i = 0; i < a.size(); ++i)
-            f[i] = {a[i] / B, a[i] % B};
-        for (int i = 0; i < b.size(); ++i)
-            g[i] = {b[i] / B, b[i] % B};
-        DIF(f, n), DIF(g, n);
-
-        Type fx = .5L / n;
-        for (int i = 0; i < min(2, n); ++i) {
-            cp p = f[i], r = g[i] * fx;
-            f[i] = (p + conj(p)) * r;
-            g[i] = (conj(p) - p) * r;
-        }
-
-        for (int k = 2, m = 3; k < n; k <<= 1, m <<= 1)
-            for (int i = k, j = k << 1; --j, i < m; ++i) {
-                cp p = f[i], q = f[j], r = g[i] * fx, s = g[j] * fx;
-                f[i] = (p + conj(q)) * r;
-                g[i] = (conj(q) - p) * r;
-                f[j] = (q + conj(p)) * s;
-                g[j] = (conj(p) - q) * s;
-            }
-        DIT(f, n), DIT(g, n);
-
-        a.resize(n);
-        for (int i = 0; i < n; ++i) {
-            int aa = (ll)roundl(f[i].real()) % mod * B * B % mod;
-            int bb = (ll)roundl(f[i].imag()) % mod * B % mod;
-            int cc = (ll)roundl(-g[i].imag()) % mod * B % mod;
-            int dd = (ll)roundl(g[i].real()) % mod;
-            a[i] = (1ll * aa + bb + cc + dd) % mod;
-        }
-    }
-
-    poly &operator*=(poly &a, const poly &t)
-    {
-        mult(a, t);
-        return a;
-    }
-
-    poly operator*(poly a, const poly &t)
-    {
-        return a *= t;
-    }
-
-    int qpow(int a, long long b)
-    {
-        int ans = 1;
-        for (; b; b >>= 1) {
-            if (b & 1)
-                ans = 1ll * ans * a % mod;
-            a = 1ll * a * a % mod;
-        }
-        return ans;
-    }
-    poly inv(const poly &f, int n)
-    {
-        if (n == 1)
-            return {qpow(f[0], mod - 2)};
-        poly h = inv(f, (n + 1) >> 1);
-        auto g = f * h * h;
-        for (auto &c : h)
-            (c += c) %= mod;
-        g.resize(n);
-        h.resize(n);
-
-        for (int i = 0; i < n; ++i)
-            h[i] = (h[i] + mod - g[i]) % mod;
-        return h;
-    }
+    for (int i = 0; i < n; ++i)
+        h[i] = (h[i] + mod - g[i]) % mod;
+    return h;
+}
 };
 
 using namespace mtt;
@@ -3228,6 +3252,7 @@ void fwt_xor(int a[],int op)
 
 \subsection{多项式求逆}
 \begin{lstlisting}
+// 1996488700
 poly operator-=(const poly &t)
 {
     auto &a = *this;
@@ -3260,6 +3285,7 @@ poly inv(int n)
 
 \subsection{多项式 ln}
 \begin{lstlisting}
+// 90010039760800
 static int frac(int x)
 {
     static int F[N];
@@ -3318,6 +3344,7 @@ poly ln(int n)
 
 \subsection{多项式 exp}
 \begin{lstlisting}
+// 13682658157382
 poly operator+=(const poly &t)
 {
     auto &a = *this;
@@ -3344,6 +3371,7 @@ poly exp(int n)
 
 \subsection{多项式快速幂}
 \begin{lstlisting}
+// 100003173198118 : 1297151213
 poly operator*=(const int &t)
 {
     auto &a = *this;
@@ -3407,6 +3435,7 @@ poly pow(const string &s, int n)  // k >= mod
 
 \subsection{多项式开根}
 \begin{lstlisting}
+// 73437682787994 : k = 3
 int BSGS(int a, int n)
 {
     unordered_map<int, int> mp;
@@ -3449,6 +3478,7 @@ poly sqrt_k(int k, int n)  // f[0]是mod下k次剩余
 
 \subsection{多项式三角函数}
 \begin{lstlisting}
+// 80125058596980
 poly cos(int n)
 {
     poly f(*this);
@@ -3463,6 +3493,7 @@ poly cos(int n)
     return h;
 }
 
+// 71800980255163
 poly sin(int n)
 {
     poly f(*this);
